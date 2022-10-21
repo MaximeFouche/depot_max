@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 from math import sqrt
+from math import atan
+from math import cos
+from math import exp
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import minimize_scalar
+from scipy.optimize import fsolve
+from scipy.misc import derivative
 
 "Exercice 1"
 
@@ -72,7 +77,7 @@ def sectionf2(f,a0,b0,tol):
 
 "sectionf2(g,a,b,tol)"
 
-#7)
+#7
 print(minimize_scalar(f,(0,2)))
 print(minimize_scalar(g,(0,1)))
 
@@ -84,3 +89,52 @@ def h(x):
 "Exercice 2"
 
 #1
+"""Pour une fonction de classe C2, on établit la suite (xn)n>=0 telle que
+xn+1=xn-(f'(xn)/f''(xn)) et on la répète pour n suffisament grand"""
+         
+#2
+def newton(f,a,b,tol):
+    xn=(a+b)/2
+    while abs(f(xn))>tol:
+        f1=derivative(f,xn)
+        xn=xn-(f(xn)/f1)
+    return xn
+
+def f(x):
+    return (x-sqrt(2))**2
+
+"""a,b=1,2
+print(newton(f,a,b,0.01))
+p=newton(f,a,b,0.01)
+print(f(p))   #Censé être proche de 0"""
+
+#3
+
+
+#4 
+def newton_minimize(f,a,b,tol):
+    xn=(a+b)/2
+    while abs(derivative(f,xn))>tol:
+        f1=derivative(f,xn)
+        f2=derivative(f,xn,n=2)
+        xn=xn-(f1/f2)
+    return xn
+
+
+#5
+def f(x):
+    return (x-sqrt(2))**2
+def g(x):
+    return -exp(atan(x)-cos(5*x))
+a,b=1,2
+print(newton_minimize(f,a,b,0.01))
+p=newton_minimize(f,a,b,0.01)
+print(derivative(f,p))   #Censé être proche de 0
+a,b=0,1
+print(newton_minimize(g,a,b,0.01))
+p=newton_minimize(g,a,b,0.01)
+print(derivative(g,p))   #Censé être proche de 0
+
+#6
+"""print(fsolve(f,1))
+print(fsolve(g,1))"""
