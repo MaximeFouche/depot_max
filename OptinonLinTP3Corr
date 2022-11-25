@@ -1,0 +1,316 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# #TP3 Méthodes de descente
+# 
+# #Exercice 1
+
+# In[1]:
+
+
+import numpy as np
+import numpy.random as rnd
+import scipy
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+
+def f(x):
+    return (x[0] - 1)**2 + 10*(x[1] - x[0]**2)**2
+
+def df(x):
+    return np.array([40*x[0]*(x[0]**2-x[1]) + 2*(x[0]-1),20*(x[1]-x[0]**2)])
+    
+def d2f(x):
+    return np.array((
+                    (1 - 4*10*x[1] + 12*10*x[0]**2, -4*x[0]*10),
+                    (             -4*10*x[0],    2*10),
+                   ))
+def g(x):
+    return x[0]**2 + 2*x[1]**2 +2*x[0]*x[1]
+def dg(x):
+    return np.array([2*x[0]+2*x[1],4*x[1]+2*x[0]])
+def d2g(x,y):
+    return np.array((
+                    (2,2),
+                    (2,4),
+                   ))
+
+
+# In[3]:
+
+
+#2
+X=np.linspace(-1,2,500)
+Y=np.linspace(-1,2,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = f(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-1,3.5,20,base=10),colors='grey')
+plt.title(r'$\mathrm{Rosenbrock \ function: } f(x,y)=(x-1)^2+10(x^2 - y)^2$')
+plt.xlabel('x')
+plt.ylabel('y')
+
+
+# In[7]:
+
+
+#3
+X=np.linspace(-1,1,500)
+Y=np.linspace(-1,1,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = g(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.title(r'$\mathrm{Quadratic \ function: } f(x,y)=x^2+4y^2+2xy$')
+plt.xlabel('x')
+plt.ylabel('y')
+
+
+# #Exercice 2
+ 
+#### PAS FIXE ######
+
+def descente_fixe(f,x0,s,tol,df):
+    x,k=x0,0
+    T=np.array([x])
+    gx=df(x)
+    while np.linalg.norm(gx) > tol and k <1000:
+        gx=df(x)
+        x,k=x-s*gx,k+1
+        T=np.append(T,[x],axis=0)
+    return T , k
+X,n=descente_fixe(g,np.array([1,1]),0.001,0.1,dg)
+X
+
+
+# In[5]:
+
+
+#quadratique
+x0,s,tol=np.array([1,1]),0.01,0.01
+X=np.linspace(-1,1,500)
+Y=np.linspace(-1,1,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = g(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.xlabel('x')
+plt.ylabel('y')
+h,tol=0.01,0.01
+T,k=descente_fixe(g,x0,s,tol,dg)
+plt.plot(T[:,0],T[:,1],'-r')
+
+plt.title(f'Descente à pas fixe avec un pas {s} et {k} itérations')
+
+
+# In[43]:
+
+
+#quadratique avec calcul du pas fixe optimal 
+np.linalg.eig(np.array((
+                    (2,2),
+                    (2,4),
+                   )))
+# s=m/L**2 optimal
+x0,s,tol=np.array([1,1]),0.76393202/5.23606798**2,0.01
+X=np.linspace(-1,1,500)
+Y=np.linspace(-1,1,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = g(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.xlabel('x')
+plt.ylabel('y')
+h,tol=0.01,0.01
+T,k=descente_fixe(g,x0,s,tol,dg)
+plt.plot(T[:,0],T[:,1],'-r')
+
+plt.title(f'Descente à pas fixe avec un pas fixe optimal m/L2 {np.round(s,4)} et {k} itérations')
+
+
+# In[6]:
+
+
+#Rosenbrock
+x0,s,tol=np.array([0,0]),0.02,0.01
+X=np.linspace(-1,2,500)
+Y=np.linspace(-1,2,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = f(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.xlabel('x')
+plt.ylabel('y')
+T,k=descente_fixe(f,x0,s,tol,df)
+plt.plot(T[:,0],T[:,1],'-r')
+plt.title(f'Descente à pas fixe avec un pas {s} et {k} itérations')
+
+
+# In[40]:
+
+
+#### PAS OPTIMAL ######
+
+
+#exercice 3 Pas optimal
+from scipy.optimize import minimize_scalar
+def descente_optimal(f,x0,tol,df):
+    x,k=x0,0
+    T=np.array([x0])
+    gx=df(x)
+    while np.linalg.norm(gx) > tol and k<1000:
+        gx=df(x)
+        def g(s): return f(x-s*gx)
+        s=minimize_scalar(g).x
+        x=x-s*gx
+        k+=1
+        T=np.append(T,[x],axis=0)
+    return T,k
+T,k=descente_optimal(g,np.array([1,1]),0.01,dg)
+
+
+
+# In[8]:
+
+
+#quadratique
+x0,s,tol=np.array([1,1]),0.01,0.01
+X=np.linspace(-1,1,500)
+Y=np.linspace(-1,1,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = g(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.xlabel('x')
+plt.ylabel('y')
+h,tol=0.01,0.01
+T,k=descente_optimal(g,x0,tol,dg)
+plt.plot(T[:,0],T[:,1],'-r')
+plt.title(f'Descente à pas optimal et {k} itérations')
+
+
+
+#Rosenbrock
+x0,tol=np.array([0,0]),0.01
+X=np.linspace(-1,2,500)
+Y=np.linspace(-1,2,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = f(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.xlabel('x')
+plt.ylabel('y')
+T,k=descente_optimal(f,x0,tol,df)
+plt.plot(T[:,0],T[:,1],'-r')
+plt.title(f'Descente à pas optimal et {k} itérations')
+
+
+#### ARMIJO ######
+
+
+def armijo(f,df,d,x,L=10,c=0.1,beta=0.5): #d_x est la direction de descente d_x . grad_x <= 0
+    # test f(x_new) \leq f(x_0) + c alpha ps{d_x}{grad_x}
+    gx=df(x)
+    k=0
+    h=-gx.dot(d)/(L*np.linalg.norm(d)**2)
+    while f(x+h*d)>f(x)+c*h*gx.dot(d) and k <1000:
+        h,k=beta*h,k+1
+    return h         
+
+armijo(g,dg,-dg(x0),x0)
+# In[25]:
+
+def descente_armijo(f,df,x,tol,L=10,c=0.1,beta=0.5):
+    x,k=x0,0
+    T=np.array([x])
+    gx=df(x)
+    while np.linalg.norm(gx) > tol and k <1000:
+        h=armijo(f,df,-gx,x,L=L,c=c,beta=beta)  
+        x,k=x-h*gx,k+1
+        gx=df(x)
+        T=np.append(T,[x],axis=0)
+    return T , k
+
+descente_armijo(g,dg,x0,tol)
+
+#quadratique
+x0,tol=np.array([1,1]),0.01
+X=np.linspace(-1,1,500)
+Y=np.linspace(-1,1,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = g(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.xlabel('x')
+plt.ylabel('y')
+h,tol=0.01,0.01
+T,k=descente_armijo(g,dg,x0,tol)
+plt.plot(T[:,0],T[:,1],'-r')
+plt.title(f'Descente à pas armijo et {k} itérations')
+
+#Rosenbrock
+x0,tol=np.array([0,0]),0.01
+X=np.linspace(-1,2,500)
+Y=np.linspace(-1,2,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = f(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.xlabel('x')
+plt.ylabel('y')
+T,k=descente_armijo(f,df,x0,tol)
+plt.plot(T[:,0],T[:,1],'-r')
+plt.title(f'Descente à pas armijo et {k} itérations')
+
+
+#### WOLFE ######
+def wolfe(f,df,d,x,L=10,c1=0.1,c2=0.9,beta=0.5): #d_x est la direction de descente d_x . grad_x <= 0
+    # test f(x_new) \leq f(x_0) + c alpha ps{d_x}{grad_x}
+    gx=df(x)
+    k=0
+    m,M=0,inf
+    h=-gx.dot(d)/(L*np.linalg.norm(d)**2)
+    while f(x+h*d)>f(x)+c1*h*gx.dot(d) or  df(x+h*d).dot(d) < c2*df(x).dot(d):
+        if f(x+h*d) > f(x)+c1*h*gx.dot(d):
+            M=h
+            h=(m+M)/2
+        else:
+            m=h
+            if M==inf :
+                h=10*h
+            else :
+                h=(m+M)/2
+    return h         
+
+wolfe(g,dg,-dg(x0*2),x0)
+
+
+def descente_wolfe(f,df,x,tol,L=10,c1=0.1,c2=0.9,beta=0.5):
+    x,k=x0,0
+    T=np.array([x])
+    while np.linalg.norm(df(x)) > tol and k <1000:
+        h=wolfe(f,df,-df(x),x,L=L,c1=c1,c2=c2,beta=beta)
+        x,k=x-h*df(x),k+1
+        T=np.append(T,[x],axis=0)
+    return T , k
+
+descente_wolfe(g,dg,x0,tol)
+
+
+#quadratique
+x0,tol=np.array([1,1]),0.01
+X=np.linspace(-1,1,500)
+Y=np.linspace(-1,1,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = g(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.xlabel('x')
+plt.ylabel('y')
+h,tol=0.01,0.01
+T,k=descente_wolfe(g,dg,x0,tol)
+plt.plot(T[:,0],T[:,1],'-r')
+plt.title(f'Descente à pas wolfe et {k} itérations')
+
+#Rosenbrock
+x0,tol=np.array([0,0]),0.01
+X=np.linspace(-1,2,500)
+Y=np.linspace(-1,2,500)
+XX,YY= np.meshgrid(X,Y)
+ZZ = f(np.array([XX,YY]))
+plt.contour(XX,YY,ZZ,levels=np.logspace(-3,1,10,base=10),colors='grey')
+plt.xlabel('x')
+plt.ylabel('y')
+T,k=descente_wolfe(f,df,x0,tol)
+plt.plot(T[:,0],T[:,1],'-r')
+plt.title(f'Descente à pas Wolfe et {k} itérations')
