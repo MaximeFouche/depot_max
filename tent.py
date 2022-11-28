@@ -86,4 +86,16 @@ y2=descente(L2,C.T@pi)
 x2=remontee(U2,y2)
 print(x2)
 print(np.allclose(G@x2, C.T@pi)) 
-print(np.allclose(P@x2, x2)) 
+print(np.allclose(P@x2, x2))   #Le but est d'avoir True aux deux
+
+#Test
+B=MatriceA(4,1)
+P2=np.eye(4)
+P2[2,2]=0
+print(P2)
+C2=B@P2.T
+print(C2)
+G2=C2.T@C2
+print(G2)
+L3,U3=LU2(G2)
+print(L3,U3)
