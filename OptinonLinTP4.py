@@ -119,8 +119,9 @@ plt.title(f'Méthode Newton pas de Wolfe et {k} itérations')
 """
 #Newton classique converge plus vite qu'avec le pas de Wolfe
 
-"""
+
 #Exercice 2
+"""
 def BFGS(f,df,x0,tol):
     k,x=0,x0
     B=np.eye(len(x))
@@ -129,23 +130,17 @@ def BFGS(f,df,x0,tol):
     
 #Exercice 3: Taper "wikipédia gauss newton sur internet"
 #1
-"""
+
 t = np.array([0.038,0.194,.425,.626,1.253,2.500,3.740])
 y = np.array([0.050,0.127,0.094,0.2122,0.2729,0.2665,0.3317])
-
 xopt=np.array((0.362,0.556))
 x0=np.array((0.9,0.2))
-
 def v(t,x):
     return x[0]*t/(x[1]+t)
-
 plt.scatter(t,y)
 plt.plot(np.linspace(0,4,50),v(np.linspace(0,4,50),xopt))
-
 x=x0
-
 x0,tol=np.array((0.9,0.2)),0.0001
-
 #2
 def r(x):  #résidu
     return y-v(t,x)
@@ -158,16 +153,44 @@ def GN(x0,tol): #algorithme Gauss Newton
         x= x-np.linalg.inv(np.transpose(J(x)).dot(J(x))).dot(np.transpose(J(x)).dot(r(x)))
         T,k=np.append(T,[x],axis=0),k+1
     return T , k
+GN(x0,tol)  #rend les estimations de l'exemple wikipédia
 
-#GN(x0,tol)  #rend les estimations de l'exemple wikipédia
-"""
 #3
-a,b,c=5,0.1,0.1*2*math.pi
+a,b,c=5,0.1,0.1
 xopt=np.array((a,b,c))
-def m(t,x):
-    return x[0]*np.exp(-x[1]*t)*np.sin(x[2]*t)
 
-t=np.arange(0,21,2)
-y=m(t,xopt)+0.1*np.random.randn(11)
-plt.scatter(t,y)
+def m(t,x):
+    return x[0]*np.exp(-x[1]*t)*np.sin(x[2]*2*math.pi*t)
+
+t2=np.arange(0,21,2)
+y2=m(t,xopt)+0.1*np.random.randn(11)
+plt.scatter(t,y2)
 plt.plot(np.linspace(0,20,100),m(np.linspace(0,20,100),xopt))
+
+def r2(x):  #résidu
+    return y2-m(t,x)
+print(r2(x0))
+
+def J2(x): #transposée du Jacobien de r
+    A=-np.exp(-x[1]*t2)*np.sin(x[2]*2*math.pi*t2)
+    B=x[0]*t*np.exp(-x[1]*t2)*np.sin(x[2]*2*math.pi*t2)
+    C=-2*math.pi*t2*x[0]*np.exp(-x[1]*t2)*np.cos(x[2]*2*math.pi*t2)
+    return np.array((A,B,C)).T
+print(J2(x0))
+
+def GN2(x0,tol): #algorithme Gauss Newton
+    x,k=x0,0
+    T=np.array([x])
+    while np.linalg.norm(r2(x).dot(J2(x))) > tol and k <100:
+        x= x-np.linalg.inv(np.transpose(J2(x)).dot(J2(x))).dot(np.transpose(J2(x)).dot(r2(x)))
+        T,k=np.append(T,[x],axis=0),k+1
+    return T , k
+x0=np.array((5.2,0.2,0.1))
+tol=0.1
+T2,k2=GN2(x0,tol)
+
+plt.scatter(t2,y2)
+plt.plot(np.linspace(0,20,500),m(np.linspace(0,20,500),T2[k2-1]))
+
+
+
