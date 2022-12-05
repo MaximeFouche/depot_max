@@ -7,10 +7,14 @@ import random
 import matplotlib.pyplot as plt
 from scipy.special import factorial
 from math import exp
+from math import pi
+import pandas as pnd
+
 
 
 """Exercice 1"""
 
+"""
 def pseudoal(a,b,N,n):
     y=int(N*random.random())
     x=y/N
@@ -24,8 +28,10 @@ def pseudoal(a,b,N,n):
 a,b,N,n=16807,0,2**31-1,1000
 X=pseudoal(a, b, N, n)
 plt.hist(X,density="True")
+"""
 
 """Exercice 2"""
+"""
 def marchal(p1,p2,p3,p4,n):
     x,y=0,0
     X,Y=[x],[y]
@@ -48,8 +54,9 @@ n=1000000
 X,Y=marchal(p1, p2, p3, p4, n)
 plt.plot(X,Y,'b')
 plt.show()   
-
+"""
 """Exercice 3"""
+"""
 #1
 def Poisson(lamb):
     pk=0
@@ -89,6 +96,78 @@ print(f"loi simulée: {A}")
 plt.hist(X,label="loi exacte", alpha=0.5)
 plt.hist(A,label="loi simulée",alpha=0.7)
 plt.legend()
+
+"""
+
+"""Exercice 4"""
+
+#a) Après calculs, X=t0*U**(1/(alpha+1))
+
+def simug(alpha,t0,n):
+    V=[]
+    for i in range(n):
+        U=random.random()
+        X=t0*U**(1/(alpha+1))
+        V.append(X)
+    return V
+
+def G(t,alpha,t0):    #fdr exacte
+    return (t/t0)**(alpha+1)
+
+alpha,t0,n=1,1,10000
+
+V=simug(alpha, t0, n)
+V.sort()
+N=[]
+for i in range(1,n+1):
+    N.append(i/n)
+
+Xex=np.linspace(0,t0,n)
+Yex=(Xex/t0)**(alpha+1)
+print(Xex)
+print(N)
+
+plt.plot(Xex,Yex,label='fdr exacte')
+plt.step(V,N,label='fdr empirique')
+plt.legend()
+
+alpha=1/2
+to=np.pi/2
+
+def falpha(x,alpha):
+    return x**alpha*np.cos(x)
+
+def simufalpha(N,alpha):
+    t0=np.pi/2
+    c=0
+    stock=[]
+    for i in range(1,N):
+        y=simug(alpha,t0,1)[0]
+        c+=1
+        while random.random()>np.cos(y):
+            c+=1
+            y=simug(alpha, t0, 1)[0]
+        stock.append(y)
+        return stock
+            
+            
+    
+def approxd(alpha,N):
+    plt.xlim(0,np.pi/2)
+    t0=np.pi/2
+    v=np.linspace(0,t0,100)
+    plt.plot(v,falpha(v,alpha),color='red',label='densité exacté non normalisé')
+    #Histogramme
+    u=simufalpha(N, alpha)
+    plt.hist(u,density=True,label='histogramme')
+    v=pnd.Series(u)
+    v.plot.kde(bw_method=0.3,color='green',linestyle="--",label='densité approximative') 
+    plt.title('Comparaison entre densité exacte et approximative')
+    plt.legend()
+    plt.show()
+    plt.close()
+    
+approxd(alpha,1000)
 
      
     
