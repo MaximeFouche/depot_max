@@ -3,7 +3,7 @@
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-
+#2)
 lamb=2
 n=100000
 p=lamb/n
@@ -21,3 +21,5 @@ plt.plot(X,Y,"r",label="Densité exponentielle")
 plt.hist(Xn,density=True,label="Densité empirique",bins=200)
 plt.xlim(0,3)
 plt.legend()
+
+#3)
