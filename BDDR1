@@ -1,0 +1,44 @@
+//// -- LEVEL 1
+//// -- Schemas, Tables and References
+
+// Creating tables
+// You can define the tables with full schema names
+Table hotel {
+  id int
+  nom_hotel varchar
+  adresse varchar
+}
+
+
+Table type{
+  id int (pk)
+  prix int
+}
+
+Table reservation {
+  id int
+  id_hotel int [ref: > hotel.id]
+  id_client int [ref: > client.id]
+  id_chambre int [ref: > chambre.id]
+  duree_sejour int
+  jour_arrivee date
+}
+
+Table chambre {
+  id int
+  tarif id [ref: - type.id]
+  hotel_id int [ref: > hotel.id]
+  etage int
+  numero int
+}
+
+Table client {
+  id int
+  nom varchar
+  prenom varchar
+  telephone int
+  adresse varchar
+}
+
+//----------------------------------------------//
+
