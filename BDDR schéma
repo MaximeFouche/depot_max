@@ -1,0 +1,26 @@
+Table article {
+  id int
+  titre varchar
+  auteur varchar
+  institut int
+  theme int
+  sous_theme int
+  date_publi date 
+  pages int
+}
+
+Table institut as I{
+  id int 
+  nom varchar
+  adresse varchar 
+}
+
+Table theme as T {
+  id int 
+  nom varchar
+}
+
+Table sous_theme as ST {
+  id int 
+  nom  varchar
+}
