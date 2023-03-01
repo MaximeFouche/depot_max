@@ -175,7 +175,7 @@ print("proba 300 =",occs[vals.index(300)])
 print("moyenne =",np.mean(Ts))
 print("var =",np.var(Ts))
 
-#Bonus
+#Bonus1
 def Z():
     x=npr.rand()
     if x<=0.5: return 1
@@ -223,5 +223,11 @@ def Xt2(x,a,l,t):
     #plt.scatter(tis,Nis,marker='+')
     ts=np.linspace(0,t,1000)
     Ns=Ntmod(0.08,ts,50,Ndonne=[tis,Nis])
+    print(tis)
     plt.plot(ts,Ns)
-Xt2(6,0.1,0.1,100000)
+Xt2(50,0.15,0.06,1000)
+
+#Bonus2 : Ex8 TD2
+Q=np.array([-0.14,0.1,0.04],[10,-1,0],[1,0,-1])
+
+
