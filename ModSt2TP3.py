@@ -103,4 +103,29 @@ for i in range(n):
     morts+=(X[len(X)-1]==0)
 p10=morts/n
 print(p10)
-    
+
+#Bonus
+a=0.5
+m=0.02
+def naiss_mort_immig(x,tf):
+    i=0
+    y=x
+    t=0
+    X=[y]
+    Tsaut=[t] 
+    while i<tf:
+        i+=1
+        tl=exp(a)
+        tm=exp(m*X[i-1])
+        if tl<tm or X[i-1]==0:
+            y+=1
+            X+=[y]
+            Tsaut+=[tl]
+        else:
+            y+=-1
+            X+=[y]
+            Tsaut+=[tm]
+    T=np.cumsum(Tsaut)
+    return X,T
+X,T=naiss_mort_immig(10,10000)
+plt.plot(T,X)
