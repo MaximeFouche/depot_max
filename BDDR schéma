@@ -1,4 +1,3 @@
-
 Table article {
   id int [pk]
   date datetime
@@ -22,7 +21,7 @@ Table author {
   last_name varchar
   email varchar
   labo_id int [ref: > labo.labo_id]
-  institution_id int [ref: < institution.institution_id]
+  institution_id int [ref: > institution.institution_id]
 }
 
 Table institution {
