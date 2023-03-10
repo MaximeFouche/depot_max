@@ -1,26 +1,57 @@
+
 Table article {
-  id int
-  titre varchar
-  auteur varchar
-  institut int
-  theme int
-  sous_theme int
-  date_publi date 
-  pages int
+  id int [pk]
+  date datetime
+  name varchar
+  subtheme_id int [ref: > article_theme.id]
+  type_id int [ref: > type.id]
+  journal_id int [ref: > journal.id]
+  doi varchar
+  url varchar
 }
 
-Table institut as I{
-  id int 
-  nom varchar
-  adresse varchar 
+Table article_author {
+  article_id int [ref: < article.id]
+  author_id int [ref: < author.id]
 }
 
-Table theme as T {
-  id int 
-  nom varchar
+Table author {
+  id int [pk] 
+  first_name varchar
+  middle_name varchar
+  last_name varchar
+  email varchar
+  labo_id int [ref: > labo.labo_id]
+  institution_id int [ref: < institution.institution_id]
 }
 
-Table sous_theme as ST {
-  id int 
-  nom  varchar
+Table institution {
+  institution_id int [pk]
+  institution varchar
 }
+
+Table labo {
+labo_id int [pk]
+name varchar
+}
+
+Table journal {
+id int [pk]
+journal varchar
+}
+
+Table article_theme {
+id int [pk]
+theme_id int [ref: > themes.id]
+}
+
+Table themes {
+id int [pk]
+name varchar
+}
+
+Table type {
+id int [pk]
+name varchar
+}
+
