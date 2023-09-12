@@ -1,0 +1,32 @@
+1) Créer un signal u(t) à impulsion périodique avec tau=T/2 et d'amplitude E ,t=[0,pas,T]
+2) Le tracer en fonction du temps et "vérifier"
+3) Algo de Fourier u(t)->(a0,an,bn)
+4) Tracer le spectre de pusiaance (cn²/2) en fonction de n
+5) Reconstruire le signal avec N harmoniques. Comparer avec u(t)
+
+import math
+import numpy as np
+import scipy.integrate as sci
+import matplotlib.pyplot as plt
+
+T=1
+E=1
+tau=0.5
+def signal(t):return np.sin(2*np.pi*t/T)
+def signal2(t):return np.sign(np.sin(2*np.pi*t/T))
+te=np.linspace(-T,3*T,80)
+
+plt.plot(te, np.sign(signal2(te)), 'or-', label = u"Signal echantillonne")
+plt.grid()
+plt.xlabel("Temps $t$")
+plt.ylabel("Amplitude $x(t)$")
+plt.legend()
+plt.show()
+
+#3) pas fini
+per=np.linspace(0,T,1000)
+pas=per[1]-per[0]
+def a(n):
+    return (2/T)*np.sum(signal2(per)*np.cos(2*n*np.pi*per/T)*1/pas)
+def b(n):
+    return (2/T)*np.sum(signal2(per)*np.cos(2*n*np.pi*per/T)*1/pas)
