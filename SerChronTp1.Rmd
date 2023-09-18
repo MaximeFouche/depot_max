@@ -1,0 +1,82 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{}
+install.packages("tseries")
+install.packages("forecast")
+install.packages("RcppArmadillo")
+```
+
+
+
+```{r}
+library(datasets)
+library(stats)
+```
+
+```{r}
+data=AirPassengers
+typeof(data)
+class(data)
+frequency(data)
+```
+
+```{r}
+plot(data,ylab="AirPassengers") #modèle additif pas suffisant ici
+grid()
+frequency(data)
+```
+```{r}
+ldata=log(data)  #pour se débarasser de l'augmentation de l'amplitude
+plot(ldata,ylab="log(AirPassengers)") 
+grid()
+frequency(ldata)
+```
+
+```{r}
+decomp=decompose(ldata,type="additive")
+plot(decomp$seasonal) #composante périodique
+plot(decomp$trend)    #composante tendance
+plot(decomp$random)   #composante des fluctuations
+plot(decomp$figure, type="l") #estimation de St sur une période
+sum(decomp$figure) #somme des St sur une période, nulle en théorie, proche de 0 en pratique
+```
+```{r}
+plot(decomp) #affichage simultané de la série, sa tendance, sa saison et ses fluctuations
+class(decomp)
+```
+
+```{r}
+#Modèle prédictif : trend=a0+a1x
+
+tps=c(1:length(decomp$trend))
+reglin=lm(decomp$trend ~ tps,data=data)
+summary(reglin)
+```
+```{r}
+rega0=reglin$coefficients[1]
+rega1=reglin$coefficients[2]
+plot(tps,decomp$trend, type="l", ylab="Trend")
+lines(tps,rega0+rega1*tps, col="red", lty=2)
+```
+
+```{r}
+#Prediction
+period=c(145:168) #2 nouvelles périodes de 12 en partant de la fin de decomp à 144
+pred=rega0+rega1*period+decomp$figure
+```
+
+```{r}
+#Affichage de prédiction avec anciennes données
+plot(ts(c(ldata,pred), frequency=12, start=1949), type="l", ylab="log(AirPassengers)")
+lines(ts(pred, frequency=12, start=1961), col="red")
+grid()
+```
+```{r}
+#Affichage sans log 
+plot(ts(c(data,exp(pred)), frequency=12, start=1949), type="l", ylab="AirPassengers")
+lines(ts(exp(pred), frequency=12, start=1961), col="red")
+grid()
+```
+
