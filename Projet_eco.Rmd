@@ -1,0 +1,85 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Importation des librairies:
+```{r}
+#install.packages("MatchIt")
+library(MatchIt)
+#install.packages('Rcpp')
+library(Rcpp)
+library(dplyr)
+```
+Récupération des données
+```{r}
+hepat <- read.csv('C:/Users/maxfou/Desktop/hepatitisc.csv')
+```
+
+Le but est de voir s'il existe des critères qui favorisent l'apparition d'une cirrhose, le groupe de contrôle seront les donneurs de sang sains (Category=0) et le groupe de traitement est celui avec une cirrhose (Category=3)
+
+On récupère les noms des colonnes pour les appeler plus tard:
+
+```{r}
+names(hepat)
+```
+
+
+On commence par nettoyer et filtrer les données, i.e enlever les N.A et le autres catégories:
+Tout d'abord le filtrage:
+
+```{r}
+filtered=hepat %>% filter(Category == "0=Blood Donor" | Category == "3=Cirrhosis" )
+filtered
+```
+Nettoyage:
+
+```{r}
+clean=na.omit(filtered)
+clean
+```
+
+On vérifie le nombre d'individus dans les deux groupes:
+```{r}
+occurences<-table(unlist(clean))
+occurences["3=Cirrhosis"]
+occurences["0=Blood Donor"]
+nrow(clean)
+```
+Parmi les 526 donneurs sains, on va en trouver 24 à apparier avec les membres du groupe de cirrhose.
+
+On crée une colonne booléenne pour la classe (sain ou cirrhose):
+```{r}
+Classe=c()
+for (i in  1:nrow(clean)){
+  Classe=append(Classe,as.integer(clean[i,"Category"]=="3=Cirrhosis"))
+}
+Classe
+```
+
+Petit détail des opérations effectuées ci-dessus:
+```{r}
+clean[540,"Category"]
+a=c()
+b=as.integer(clean[540,"Category"]=="3=Cirrhosis")
+c=append(a,b)
+c=append(c,b)
+a
+b
+c
+```
+On ajoute Classe au dataset:
+```{r}
+fin=cbind(clean,Classe)
+fin
+```
+
+
+
+On utilisera en données quantitatives : "Age", "ALB", "ALP", "ALT", "AST", "BIL", "CHE", "CHOL", "CREA", "GGT" et "PROT" 
+(soit 11 variables) pour expliquer "Classe"
+```{r}
+m.out = matchit (Classe ~ , data=clean, method="nearest", ratio=1)
+summary(m.out)
+```
+
