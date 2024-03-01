@@ -10,7 +10,11 @@ library(MatchIt)
 #install.packages('Rcpp')
 library(Rcpp)
 library(dplyr)
+#install.packages("glmnet")
+library(glmnet)
+library(arm)
 ```
+
 Récupération des données
 ```{r}
 hepat <- read.csv('C:/Users/maxfou/Desktop/hepatitisc.csv')
@@ -79,7 +83,150 @@ fin
 On utilisera en données quantitatives : "Age", "ALB", "ALP", "ALT", "AST", "BIL", "CHE", "CHOL", "CREA", "GGT" et "PROT" 
 (soit 11 variables) pour expliquer "Classe"
 ```{r}
-m.out = matchit (Classe ~ , data=clean, method="nearest", ratio=1)
+m.out = matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="nearest", ratio=1)
 summary(m.out)
+```
+
+Affichage 
+```{r}
+plot(m.out, type="jitter")
+plot(m.out, type="hist")
+```
+
+
+
+
+
+Essai avec un ratio de 2 (on apparie un élément traité avec 2 éléments contrôle)
+```{r}
+m2.out = matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="optimal", ratio=8)
+summary(m2.out)
+```
+
+Affichage 
+```{r}
+plot(m2.out, type="jitter")
+plot(m2.out, type="hist")
+```
+
+Autre distance utilisée: 
+```{r}
+man= matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="nearest", distance = "mahalanobis", ratio=1)
+summary(man)
+```
+
+Affichage des qq-plot des deux groupes avant et après appariement
+```{r}
+plot(man, type="qq", interactive=FALSE)
+```
+Affichage des densités avant et après appariement
+```{r}
+plot(man, type="density", interactive=FALSE)
+```
+Affichage des ecdf (empirical cumulative distribution function: pour n éléments, saute de 1/n à chaque point de l'échantillon )
+```{r}
+plot(man, type="ecdf", interactive=FALSE)
+```
+
+Tentative de régression linéaire pénalisée avec glmnet car séparation parfaite de Classe empêche régression linéaire
+```{r}
+df=fin[c("Age", "ALB", "ALP", "ALT", "AST", "BIL" ,"CHE" ,"CHOL" ,"CREA" ,"GGT", "PROT")]
+class(df)
+mat= as.matrix(df)
+class(mat)
+class(Classe)
+ps<- glmnet(mat, Classe , family = binomial())
+summary(ps)
+```
+
+```{r}
+plot(ps)
+print(ps)
+```
+```{r}
+coef(ps,s=0.01)
+```
+
+Test de distances différentes
+```{r}
+test = matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="nearest", distance = "lasso", ratio=4)
+summary(test)
+plot(test, type="jitter")
+plot(test, type="hist")
+```
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "ridge", ratio=4)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "bart", ratio=3)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "elasticnet", ratio=3)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "glm", ratio=1)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "rpart", ratio=5)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+Test logit
+```{r}
+reg=glm(Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, family="binomial")
+summary(reg)
+```
+
+
+
+Test glmbayes
+```{r}
+bay=bayesglm(Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, family="binomial")
+summary(bay)
+```
+
+
+
+Autre méthode utilisée ("optimal")
+```{r}
+opt= matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="optimal", distance="mahalanobis", ratio=1)
+summary(opt)
+```
+
+
+Affichage des qq-plot des deux groupes avant et après appariement
+```{r}
+plot(opt, type="qq", interactive=FALSE)
+```
+Affichage des densités avant et après appariement
+```{r}
+plot(opt, type="density", interactive=FALSE)
+```
+
+
+Enlevons les variables les moins bien appariés, càd celles avec la plus grande Var. Ratio (ratio des variances):
+```{r}
+moins = matchit (Classe ~ Age + ALB + ALT + AST + CHE + CHOL + PROT, data=fin, method="nearest", ratio=1)
+summary(moins)
+```
+
+Dataset 2:
+```{r}
+
 ```
 
