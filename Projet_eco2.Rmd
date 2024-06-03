@@ -1,0 +1,484 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Importation des librairies:
+```{r}
+#install.packages("MatchIt")
+library(MatchIt)
+#install.packages('Rcpp')
+library(Rcpp)
+#install.packages('dplyr')
+library(dplyr)
+#install.packages("glmnet")
+library(glmnet)
+#install.packages('arm')
+library(arm)
+```
+
+Récupération des données
+```{r}
+hepat <- read.csv('C:/Users/maxfou/Desktop/hepatitisc.csv')
+```
+
+Le but est de voir s'il existe des critères qui favorisent l'apparition d'une cirrhose, le groupe de contrôle seront les donneurs de sang sains (Category=0) et le groupe de traitement est celui avec une cirrhose (Category=3)
+
+On récupère les noms des colonnes pour les appeler plus tard:
+
+```{r}
+names(hepat)
+```
+
+
+On commence par nettoyer et filtrer les données, i.e enlever les N.A et le autres catégories:
+Tout d'abord le filtrage:
+
+```{r}
+filtered=hepat %>% filter(Category == "0=Blood Donor" | Category == "3=Cirrhosis" )
+filtered
+```
+Nettoyage:
+
+```{r}
+clean=na.omit(filtered)
+clean
+```
+
+On vérifie le nombre d'individus dans les deux groupes:
+```{r}
+occurences<-table(unlist(clean))
+occurences["3=Cirrhosis"]
+occurences["0=Blood Donor"]
+nrow(clean)
+```
+Parmi les 526 donneurs sains, on va en trouver 24 à apparier avec les membres du groupe de cirrhose.
+
+On crée une colonne booléenne pour la classe (sain ou cirrhose):
+```{r}
+Classe=c()
+for (i in  1:nrow(clean)){
+  Classe=append(Classe,as.integer(clean[i,"Category"]=="3=Cirrhosis"))
+}
+Classe
+```
+
+Petit détail des opérations effectuées ci-dessus:
+```{r}
+clean[540,"Category"]
+a=c()
+b=as.integer(clean[540,"Category"]=="3=Cirrhosis")
+c=append(a,b)
+c=append(c,b)
+a
+b
+c
+```
+On ajoute Classe au dataset:
+```{r}
+fin=cbind(clean,Classe)
+fin
+```
+
+
+
+On utilisera en données quantitatives : "Age", "ALB", "ALP", "ALT", "AST", "BIL", "CHE", "CHOL", "CREA", "GGT" et "PROT" 
+(soit 11 variables) pour expliquer "Classe"
+```{r}
+m.out = matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="nearest", ratio=1)
+summary(m.out)
+```
+
+Affichage 
+```{r}
+plot(m.out, type="jitter")
+plot(m.out, type="hist")
+```
+
+
+
+
+
+Essai avec un ratio de 2 (on apparie un élément traité avec 2 éléments contrôle)
+```{r}
+m2.out = matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="optimal", ratio=8)
+summary(m2.out)
+```
+
+Affichage 
+```{r}
+plot(m2.out, type="jitter")
+plot(m2.out, type="hist")
+```
+
+Autre distance utilisée: 
+```{r}
+man= matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="nearest", distance = "mahalanobis", ratio=1)
+summary(man)
+```
+
+Affichage des qq-plot des deux groupes avant et après appariement
+```{r}
+plot(man, type="qq", interactive=FALSE)
+```
+Affichage des densités avant et après appariement
+```{r}
+plot(man, type="density", interactive=FALSE)
+```
+Affichage des ecdf (empirical cumulative distribution function: pour n éléments, saute de 1/n à chaque point de l'échantillon )
+```{r}
+plot(man, type="ecdf", interactive=FALSE)
+```
+
+Tentative de régression linéaire pénalisée avec glmnet car séparation parfaite de Classe empêche régression linéaire
+```{r}
+df=fin[c("Age", "ALB", "ALP", "ALT", "AST", "BIL" ,"CHE" ,"CHOL" ,"CREA" ,"GGT", "PROT")]
+class(df)
+mat= as.matrix(df)
+class(mat)
+class(Classe)
+ps<- glmnet(mat, Classe , family = binomial())
+summary(ps)
+```
+
+```{r}
+plot(ps)
+print(ps)
+```
+```{r}
+coef(ps,s=0.01)
+```
+
+Test de distances différentes
+```{r}
+test = matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="nearest", distance = "lasso", ratio=4)
+summary(test)
+plot(test, type="jitter")
+plot(test, type="hist")
+```
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "ridge", ratio=4)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "bart", ratio=3)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "elasticnet", ratio=3)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "glm", ratio=1)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "rpart", ratio=5)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+Test logit
+```{r}
+reg=glm(Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, family="binomial")
+summary(reg)
+```
+
+
+
+Test glmbayes
+```{r}
+bay=bayesglm(Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, family="binomial")
+summary(bay)
+```
+
+
+
+Autre méthode utilisée ("optimal")
+```{r}
+opt= matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="optimal", distance="mahalanobis", ratio=1)
+summary(opt)
+```
+
+
+Affichage des qq-plot des deux groupes avant et après appariement
+```{r}
+plot(opt, type="qq", interactive=FALSE)
+```
+Affichage des densités avant et après appariement
+```{r}
+plot(opt, type="density", interactive=FALSE)
+```
+
+
+Enlevons les variables les moins bien appariés, càd celles avec la plus grande Var. Ratio (ratio des variances):
+```{r}
+moins = matchit (Classe ~ Age + ALB + ALT + AST + CHE + CHOL + PROT, data=fin, method="nearest", ratio=1)
+summary(moins)
+```
+
+
+
+
+
+
+
+
+
+Dataset 2:
+Récupération des données
+
+```{r}
+cancer <- read.csv('C:/Users/maxfou/Documents/breast-cancer.csv')
+head(cancer)
+```
+
+Le but est d'identifier quels sont les caractéristiques qui facilitent l'apparition ou qui sont liés à l'apparition d'une tumeur cancéreuse au niveau du sein. Le groupe de contrôle sera donc les individus affectés d'une tumeur bénigne (B) et le groupe test sera ceux affectés d'une tumeur malignante (M)
+
+
+On récupère les noms des colonnes pour les appeler plus tard:
+
+```{r}
+names(cancer)
+```
+On commence par nettoyer et filtrer les données, i.e enlever les N.A et le autres catégories:
+Tout d'abord le filtrage:
+
+```{r}
+filtered=cancer %>% filter(diagnosis == "B" | diagnosis == "M" )
+filtered
+```
+Nettoyage:
+
+```{r}
+clean=na.omit(filtered)
+clean
+```
+
+On vérifie le nombre d'individus dans les deux groupes:
+```{r}
+occurences<-table(unlist(clean))
+occurences["M"]
+occurences["B"]
+nrow(clean)
+```
+Parmi les 357 individus sains (B), on va essayer de trouver 212 à apparier avec les membres du groupe des tumeurs malignantes.
+
+On crée une colonne booléenne pour la classe (bénin ou malignant):
+```{r}
+Classe=c()
+for (i in  1:nrow(clean)){
+  Classe=append(Classe,as.integer(clean[i,"diagnosis"]=="M"))
+}
+Classe
+```
+
+Petit détail des opérations effectuées ci-dessus:
+```{r}
+clean[540,"diagnosis"]
+a=c()
+b=as.integer(clean[569,"diagnosis"]=="M")
+c=append(a,b)
+c=append(c,b)
+a
+b
+c
+```
+On ajoute Classe au dataset:
+```{r}
+fin=cbind(clean,Classe)
+fin
+```
+
+
+
+On utilisera en données quantitatives des mesures effectuées sur les cellules présentes dans les seins des patientes : "radius_mean", "texture_mean", "perimeter_mean", "area_mean", "smoothness_mean", "compactness_mean", "concavity_mean", "concave.points_mean", "symmetry_mean", "fractal_dimension_mean", "radius_se", "texture_se", "perimeter_se", "area_se", "smoothness_se", "compactness_se",  "concavity_se", "concave.points_se"      
+"symmetry_se", "fractal_dimension_se", "radius_worst", "texture_worst", "perimeter_worst", "area_worst", "smoothness_worst", "compactness_worst", "concavity_worst", "concave.points_worst", "symmetry_worst", "fractal_dimension_worst"
+
+(soit 30 variables) pour expliquer "Classe"
+```{r}
+m.out = matchit (Classe ~ radius_mean + texture_mean + perimeter_mean + area_mean + smoothness_mean + compactness_mean + concavity_mean + concave.points_mean + symmetry_mean + fractal_dimension_mean + radius_se + texture_se + perimeter_se + area_se + smoothness_se + compactness_se + concavity_se + concave.points_se + symmetry_se + fractal_dimension_se + radius_worst + texture_worst + perimeter_worst + area_worst + smoothness_worst + compactness_worst + concavity_worst + concave.points_worst + symmetry_worst + fractal_dimension_worst, data=fin, method="nearest", ratio=1)
+summary(m.out)
+```
+Essai moyenne (mean)
+```{r}
+mean.out = matchit (Classe ~ radius_mean + texture_mean + perimeter_mean + area_mean + smoothness_mean + compactness_mean + concavity_mean + concave.points_mean + symmetry_mean + fractal_dimension_mean , data=fin, method="nearest", ratio=1)
+summary(mean.out)
+```
+
+Essai standard error (se):
+```{r}
+se.out = matchit (Classe ~ radius_se + texture_se + perimeter_se + area_se + smoothness_se + compactness_se + concavity_se + concave.points_se + symmetry_se + fractal_dimension_se, data=fin, method="nearest", ratio=1)
+summary(se.out)
+```
+
+Essai "worst":
+```{r}
+worst.out = matchit (Classe ~ radius_worst + texture_worst + perimeter_worst + area_worst + smoothness_worst + compactness_worst + concavity_worst + concave.points_worst + symmetry_worst + fractal_dimension_worst, data=fin, method="nearest", ratio=1)
+summary(worst.out)
+```
+
+
+
+Affichage 
+```{r}
+plot(mean.out, type="jitter")
+plot(mean.out, type="hist")
+```
+
+Affichage se:
+```{r}
+plot(se.out, type="jitter")
+plot(se.out, type="hist")
+```
+Affichage worst :
+```{r}
+plot(mean.out, type="jitter")
+plot(mean.out, type="hist")
+```
+
+
+Essai avec un ratio de 1 (on apparie un élément traité avec 1 éléments contrôle)
+```{r}
+mean2.out = matchit (Classe ~ radius_mean + texture_mean + perimeter_mean + 
+    area_mean + smoothness_mean + compactness_mean + concavity_mean + 
+    concave.points_mean + symmetry_mean + fractal_dimension_mean, data=fin, method="optimal", ratio=1)
+summary(mean2.out)
+```
+
+Affichage 
+```{r}
+plot(mean2.out, type="jitter")
+plot(mean2.out, type="hist")
+```
+
+Autre distance utilisée: 
+```{r}
+mahamean= matchit (Classe ~radius_mean + texture_mean + perimeter_mean + 
+    area_mean + smoothness_mean + compactness_mean + concavity_mean + 
+    concave.points_mean + symmetry_mean + fractal_dimension_mean, data=fin, method="nearest", distance = "mahalanobis", ratio=1)
+summary(mahamean)
+```
+
+Affichage des qq-plot des deux groupes avant et après appariement
+```{r}
+plot(mahamean, type="qq", interactive=FALSE)
+```
+Affichage des densités avant et après appariement
+```{r}
+plot(mahamean, type="density", interactive=FALSE)
+```
+Affichage des ecdf (empirical cumulative distribution function: pour n éléments, saute de 1/n à chaque point de l'échantillon )
+```{r}
+plot(mahamean, type="ecdf", interactive=FALSE)
+```
+
+Tentative de régression linéaire pénalisée avec glmnet car séparation parfaite de Classe empêche régression linéaire
+```{r}
+df=fin[c("radius_mean", "texture_mean", "perimeter_mean",
+    "area_mean", "smoothness_mean", "compactness_mean", "concavity_mean", 
+    "concave.points_mean", "symmetry_mean", "fractal_dimension_mean")]
+class(df)
+mat= as.matrix(df)
+class(mat)
+class(Classe)
+ps<- glmnet(mat, Classe , family = binomial())
+summary(ps)
+```
+
+```{r}
+plot(ps)
+print(ps)
+```
+```{r}
+coef(ps,s=0.01)
+```
+
+Test de distances différentes
+```{r}
+test = matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="nearest", distance = "lasso", ratio=4)
+summary(test)
+plot(test, type="jitter")
+plot(test, type="hist")
+```
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "ridge", ratio=4)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "bart", ratio=3)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "elasticnet", ratio=3)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "glm", ratio=1)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+```{r}
+test2 = matchit (Classe ~ Age + ALB + ALP + ALT + CHE + CHOL + GGT + PROT, data=fin, method="optimal", distance = "rpart", ratio=5)
+summary(test2)
+plot(test2, type="jitter")
+plot(test2, type="hist")
+```
+Test logit
+```{r}
+reg=glm(Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, family="binomial")
+summary(reg)
+```
+
+
+
+Test glmbayes
+```{r}
+bay=bayesglm(Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, family="binomial")
+summary(bay)
+```
+
+
+
+Autre méthode utilisée ("optimal")
+```{r}
+opt= matchit (Classe ~ Age + ALB + ALP + ALT + AST + BIL + CHE + CHOL + CREA + GGT + PROT, data=fin, method="optimal", distance="mahalanobis", ratio=1)
+summary(opt)
+```
+
+
+Affichage des qq-plot des deux groupes avant et après appariement
+```{r}
+plot(opt, type="qq", interactive=FALSE)
+```
+Affichage des densités avant et après appariement
+```{r}
+plot(opt, type="density", interactive=FALSE)
+```
+
+
+Enlevons les variables les moins bien appariés, càd celles avec la plus grande Var. Ratio (ratio des variances):
+```{r}
+moins = matchit (Classe ~ Age + ALB + ALT + AST + CHE + CHOL + PROT, data=fin, method="nearest", ratio=1)
+summary(moins)
+```
+
